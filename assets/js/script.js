@@ -87,6 +87,41 @@ document.addEventListener("DOMContentLoaded", () => {
   const getWishlist = () => JSON.parse(localStorage.getItem("wishlist")) || [];
   const saveWishlist = (wishlist) => localStorage.setItem("wishlist", JSON.stringify(wishlist));
 
+  const getProductData = (productEl, fallbackImage) => ({
+    id: fallbackImage || productEl.querySelector(".product-img.default, .detials-img")?.src || productEl.dataset.productId || `product-${Date.now()}`,
+    title: productEl.querySelector(".product-title, .details-title")?.textContent.trim() || "Featured product",
+    price: parseFloat((productEl.querySelector(".new-price")?.textContent || "$0").replace("$", "")),
+    image: fallbackImage || productEl.querySelector(".product-img.default, .detials-img")?.src || "",
+    category: productEl.querySelector(".product-category")?.textContent.trim() || "New collection",
+    ratingHtml: productEl.querySelector(".product-rating")?.innerHTML || "",
+    quantity: parseInt(productEl.querySelector(".quantity")?.value || "1", 10),
+  });
+
+  const ensureToastContainer = () => {
+    let toastContainer = document.querySelector(".toast-container");
+    if (!toastContainer) {
+      toastContainer = document.createElement("div");
+      toastContainer.className = "toast-container";
+      document.body.appendChild(toastContainer);
+    }
+    return toastContainer;
+  };
+
+  const showToast = (message, type = "info", title = "Update") => {
+    const toastContainer = ensureToastContainer();
+    const toast = document.createElement("div");
+    toast.className = `toast toast-${type}`;
+    toast.innerHTML = `<span class="toast-title">${title}</span><span>${message}</span>`;
+    toastContainer.appendChild(toast);
+
+    requestAnimationFrame(() => toast.classList.add("show"));
+
+    window.setTimeout(() => {
+      toast.classList.remove("show");
+      window.setTimeout(() => toast.remove(), 300);
+    }, 2600);
+  };
+
   // --- UI UPDATE FUNCTIONS ---
   const updateHeaderCounts = () => {
     const cartCount = document.querySelector('a[href="cart.html"] .count');
@@ -106,7 +141,7 @@ document.addEventListener("DOMContentLoaded", () => {
     }
     saveCart(cart);
     updateHeaderCounts();
-    alert(`${product.title} has been added to your cart!`);
+    showToast(`${product.title} was added to your cart.`, "success", "Cart updated");
 
     // GA4 Event
     window.dataLayer = window.dataLayer || [];
@@ -130,7 +165,7 @@ document.addEventListener("DOMContentLoaded", () => {
       wishlist.push(product);
       saveWishlist(wishlist);
       updateHeaderCounts();
-      alert(`${product.title} has been added to your wishlist!`);
+      showToast(`${product.title} was saved to your wishlist.`, "success", "Wishlist updated");
 
       // GA4 Event
       window.dataLayer = window.dataLayer || [];
@@ -147,7 +182,7 @@ document.addEventListener("DOMContentLoaded", () => {
       });
       console.log("DataLayer Push (add_to_wishlist):", window.dataLayer.slice(-1)[0]);
     } else {
-      alert(`${product.title} is already in your wishlist.`);
+      showToast(`${product.title} is already in your wishlist.`, "info", "Already saved");
     }
   };
 
@@ -191,13 +226,8 @@ document.addEventListener("DOMContentLoaded", () => {
           const productEl = e.target.closest(".product-item, .details-container");
           const quantityInput = productEl.querySelector(".quantity");
           
-          const product = {
-            id: imageSrc,
-            title: productEl.querySelector(".product-title, .details-title").textContent.trim(),
-            price: parseFloat(productEl.querySelector(".new-price").textContent.replace("$", "")),
-            image: imageSrc,
-            quantity: quantityInput ? parseInt(quantityInput.value) : 1,
-          };
+          const product = getProductData(productEl, imageSrc);
+          product.quantity = quantityInput ? parseInt(quantityInput.value, 10) : 1;
           addToCart(product);
         });
       }
@@ -207,13 +237,8 @@ document.addEventListener("DOMContentLoaded", () => {
            wishlistBtn.addEventListener('click', (e) => {
                 e.preventDefault();
                 const productEl = e.target.closest('.product-item, .details-container');
-                const product = {
-                    id: imageSrc,
-                    title: productEl.querySelector('.product-title, .details-title').textContent.trim(),
-                    price: parseFloat(productEl.querySelector('.new-price').textContent.replace('$', '')),
-                    image: imageSrc,
-                    quantity: 1,
-                };
+                const product = getProductData(productEl, imageSrc);
+                product.quantity = 1;
                 addToWishlist(product);
            });
        }
@@ -406,7 +431,7 @@ document.addEventListener("DOMContentLoaded", () => {
           e.preventDefault();
           const cart = getCart();
           if (cart.length === 0) {
-              alert("Your cart is empty. Please add items before placing an order.");
+              showToast("Your cart is empty. Add a product before placing an order.", "error", "Checkout unavailable");
               return;
           }
 
@@ -541,7 +566,7 @@ document.addEventListener("DOMContentLoaded", () => {
           method: "email"
         });
         console.log("DataLayer Push (login):", window.dataLayer.slice(-1)[0]);
-        alert("Login button clicked (event pushed to dataLayer).");
+        showToast("Login interaction captured successfully.", "info", "Login event");
       });
     }
   };
@@ -557,7 +582,7 @@ document.addEventListener("DOMContentLoaded", () => {
           method: "email"
         });
         console.log("DataLayer Push (sign_up):", window.dataLayer.slice(-1)[0]);
-        alert("Sign up button clicked (event pushed to dataLayer).");
+        showToast("Sign-up interaction captured successfully.", "info", "Registration event");
       });
     }
   };
@@ -575,10 +600,171 @@ document.addEventListener("DOMContentLoaded", () => {
             search_term: searchInput.value,
           });
           console.log("DataLayer Push (search):", window.dataLayer.slice(-1)[0]);
-          alert(`Search for "${searchInput.value}" (event pushed to dataLayer).`);
+          showToast(`Showing results inspiration for “${searchInput.value}”.`, "info", "Search captured");
         }
       });
     }
+  };
+
+  const initializeScrollReveal = () => {
+    const revealElements = document.querySelectorAll(".section-title, .product-item, .category-item, .deals-item, .showcase-item, .newsletter-container, .footer-content, .home-content, .home-visual");
+    if (!("IntersectionObserver" in window)) {
+      revealElements.forEach((element) => element.classList.add("is-visible"));
+      return;
+    }
+
+    const observer = new IntersectionObserver((entries, revealObserver) => {
+      entries.forEach((entry) => {
+        if (entry.isIntersecting) {
+          entry.target.classList.add("reveal-on-scroll", "is-visible");
+          revealObserver.unobserve(entry.target);
+        }
+      });
+    }, { threshold: 0.12, rootMargin: "0px 0px -40px 0px" });
+
+    revealElements.forEach((element, index) => {
+      element.classList.add("reveal-on-scroll");
+      element.style.transitionDelay = `${Math.min(index * 0.04, 0.18)}s`;
+      observer.observe(element);
+    });
+  };
+
+  const initializeHeroParallax = () => {
+    const homeVisual = document.querySelector(".home-visual");
+    const homeImage = document.querySelector(".home-img");
+    if (!homeVisual || !homeImage || window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+
+    const resetTilt = () => {
+      homeImage.style.transform = "rotateX(0deg) rotateY(0deg) translate3d(0, 0, 0)";
+    };
+
+    homeVisual.addEventListener("mousemove", (event) => {
+      const rect = homeVisual.getBoundingClientRect();
+      const offsetX = (event.clientX - rect.left) / rect.width - 0.5;
+      const offsetY = (event.clientY - rect.top) / rect.height - 0.5;
+      homeImage.style.transform = `rotateX(${(-offsetY * 10).toFixed(2)}deg) rotateY(${(offsetX * 12).toFixed(2)}deg) translate3d(${(offsetX * 16).toFixed(1)}px, ${(offsetY * 16).toFixed(1)}px, 0)`;
+    });
+
+    homeVisual.addEventListener("mouseleave", resetTilt);
+  };
+
+  const initializeQuickViewModal = () => {
+    const quickViewButtons = document.querySelectorAll('a[aria-label="Quick View"]');
+    if (!quickViewButtons.length) return;
+
+    const modal = document.createElement("div");
+    modal.className = "quick-view-modal";
+    modal.innerHTML = `
+      <div class="quick-view-dialog" role="dialog" aria-modal="true" aria-labelledby="quick-view-title">
+        <button type="button" class="quick-view-close" aria-label="Close quick view">
+          <i class="ri-close-line"></i>
+        </button>
+        <div class="quick-view-content">
+          <div class="quick-view-media">
+            <img src="" alt="" class="quick-view-image">
+          </div>
+          <div class="quick-view-info">
+            <span class="quick-view-category"></span>
+            <h3 class="quick-view-title" id="quick-view-title"></h3>
+            <div class="product-rating quick-view-rating"></div>
+            <span class="quick-view-price"></span>
+            <p class="quick-view-description">A closer look at the product’s finish, fit, and standout details before you jump into checkout.</p>
+            <div class="quick-view-actions">
+              <a href="details.html" class="btn">View Details</a>
+              <button type="button" class="btn btn-secondary quick-view-add">Add to Cart</button>
+            </div>
+          </div>
+        </div>
+      </div>`;
+    document.body.appendChild(modal);
+
+    const imageEl = modal.querySelector(".quick-view-image");
+    const categoryEl = modal.querySelector(".quick-view-category");
+    const titleEl = modal.querySelector(".quick-view-title");
+    const ratingEl = modal.querySelector(".quick-view-rating");
+    const priceEl = modal.querySelector(".quick-view-price");
+    const addBtn = modal.querySelector(".quick-view-add");
+    let activeProduct = null;
+
+    const closeModal = () => modal.classList.remove("active");
+
+    quickViewButtons.forEach((button) => {
+      button.addEventListener("click", (event) => {
+        event.preventDefault();
+        const productEl = button.closest(".product-item");
+        if (!productEl) return;
+        activeProduct = getProductData(productEl);
+        imageEl.src = activeProduct.image;
+        imageEl.alt = activeProduct.title;
+        categoryEl.textContent = activeProduct.category;
+        titleEl.textContent = activeProduct.title;
+        ratingEl.innerHTML = activeProduct.ratingHtml;
+        priceEl.textContent = `$${activeProduct.price.toFixed(2)}`;
+        modal.classList.add("active");
+      });
+    });
+
+    modal.addEventListener("click", (event) => {
+      if (event.target === modal || event.target.closest(".quick-view-close")) closeModal();
+    });
+
+    document.addEventListener("keydown", (event) => {
+      if (event.key === "Escape") closeModal();
+    });
+
+    addBtn.addEventListener("click", () => {
+      if (!activeProduct) return;
+      addToCart({
+        id: activeProduct.id,
+        title: activeProduct.title,
+        price: activeProduct.price,
+        image: activeProduct.image,
+        quantity: 1,
+      });
+      closeModal();
+    });
+  };
+
+  const initializeInteractiveCards = () => {
+    document.querySelectorAll(".product-item").forEach((card) => {
+      card.addEventListener("mouseenter", () => card.classList.add("is-lifted"));
+      card.addEventListener("mouseleave", () => card.classList.remove("is-lifted"));
+    });
+  };
+
+  const handleNewsletterSignup = () => {
+    const newsletterForm = document.querySelector(".newsletter-form");
+    const feedback = document.querySelector(".newsletter-feedback");
+    if (!newsletterForm || !feedback) return;
+
+    newsletterForm.addEventListener("submit", (event) => {
+      event.preventDefault();
+      const input = newsletterForm.querySelector(".newsletter-input");
+      const email = input?.value.trim();
+      const isValidEmail = email && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
+
+      feedback.classList.remove("is-success", "is-error");
+      if (!isValidEmail) {
+        feedback.textContent = "Please enter a valid email to unlock your offer.";
+        feedback.classList.add("is-error");
+        showToast("Enter a valid email address to subscribe.", "error", "Subscription failed");
+        return;
+      }
+
+      feedback.textContent = `Thanks! ${email} is on the list for exclusive drops.`;
+      feedback.classList.add("is-success");
+      newsletterForm.reset();
+      showToast("You’re subscribed for launch alerts and offers.", "success", "Subscribed");
+    });
+  };
+
+  const initializeSmoothScrollButtons = () => {
+    document.querySelectorAll("[data-scroll-target]").forEach((button) => {
+      button.addEventListener("click", () => {
+        const target = document.querySelector(button.dataset.scrollTarget);
+        if (target) target.scrollIntoView({ behavior: "smooth", block: "start" });
+      });
+    });
   };
 
   /* ================================================
@@ -586,7 +772,13 @@ document.addEventListener("DOMContentLoaded", () => {
      ================================================ */
   updateHeaderCounts();
   initializeProductListeners();
-  
+  initializeInteractiveCards();
+  initializeScrollReveal();
+  initializeHeroParallax();
+  initializeQuickViewModal();
+  initializeSmoothScrollButtons();
+  handleNewsletterSignup();
+
   renderCartPage();
   renderWishlistPage();
   renderCheckoutPage();

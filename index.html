@@ -132,14 +132,53 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
     <main class="main">
         <!-- ================================================ HOME ================================================ -->
         <section class="home section-lg" id="home">
+            <div class="home-orb orb-1"></div>
+            <div class="home-orb orb-2"></div>
             <div class="home-container container grid">
                 <div class="home-content">
                     <span class="home-subtitle">Hot promotions</span>
                     <h1 class="home-title">Fashion Trending <br> <span>Great Collection</span></h1>
                     <p class="home-description">Explore our curated collection. Elevate your home with quality and style. Shop now for unique decor that reflects your taste.</p>
-                    <a href="shop.html" class="btn">Shop Now</a>
+                    <div class="home-actions flexitem">
+                        <a href="shop.html" class="btn pulse-btn">Shop Now</a>
+                        <button type="button" class="btn btn-secondary discover-btn" data-scroll-target=".products">Explore Trends</button>
+                    </div>
+                    <div class="home-highlights">
+                        <div class="highlight-card">
+                            <span class="highlight-label">Fresh drops</span>
+                            <strong>24 new arrivals this week</strong>
+                        </div>
+                        <div class="highlight-card highlight-card-accent">
+                            <span class="highlight-label">Stylist pick</span>
+                            <strong>Interactive looks curated daily</strong>
+                        </div>
+                    </div>
+                    <div class="home-stats">
+                        <div>
+                            <span class="home-stat-number">12k+</span>
+                            <span class="home-stat-label">Happy shoppers</span>
+                        </div>
+                        <div>
+                            <span class="home-stat-number">4.9</span>
+                            <span class="home-stat-label">Average rating</span>
+                        </div>
+                        <div>
+                            <span class="home-stat-number">48h</span>
+                            <span class="home-stat-label">Fast delivery</span>
+                        </div>
+                    </div>
                 </div>
-                <img src="assets/images/home-img.png" alt="" class="home-img">
+                <div class="home-visual">
+                    <div class="floating-badge badge-top">
+                        <i class="ri-fire-line"></i>
+                        Trending now
+                    </div>
+                    <img src="assets/images/home-img.png" alt="Featured fashion collection" class="home-img">
+                    <div class="floating-badge badge-bottom">
+                        <i class="ri-star-smile-line"></i>
+                        New season glow
+                    </div>
+                </div>
             </div>
         </section>
         <!-- ================================================ CATEGORIES ================================================ -->
@@ -1343,9 +1382,10 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
                     ...and recieve $25 coupon for first shopping.
                 </p>
                 <form action="" class="newsletter-form">
-                    <input type="email" placeholder="Enter Your Email" class="newsletter-input">
+                    <input type="email" placeholder="Enter Your Email" class="newsletter-input" aria-label="Email address">
                     <button type="submit" class="newsletter-btn">Subscribe</button>
                 </form>
+                <p class="newsletter-feedback" aria-live="polite"></p>
             </div>
         </section>
     </main>
